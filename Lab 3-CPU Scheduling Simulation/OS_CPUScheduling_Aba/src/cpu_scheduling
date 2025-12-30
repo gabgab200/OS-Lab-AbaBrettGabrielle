@@ -1,0 +1,171 @@
+struct Process {
+    int pid;
+    int at;   // Arrival Time
+    int bt;   // Burst Time
+    int ct;   // Completion Time
+    int tat;  // Turnaround Time
+    int wt;   // Waiting Time
+};
+
+/* ================= FCFS ================= */
+void fcfs(struct Process p[], int n) {
+    int time = 0;
+    float total_tat = 0, total_wt = 0;
+
+    printf("\n--- FCFS Scheduling ---\n");
+    printf("P\tAT\tBT\tCT\tTAT\tWT\n");
+
+    for (int i = 0; i < n; i++) {
+        if (time < p[i].at)
+            time = p[i].at;
+
+        time += p[i].bt;
+        p[i].ct = time;
+        p[i].tat = p[i].ct - p[i].at;
+        p[i].wt = p[i].tat - p[i].bt;
+
+        total_tat += p[i].tat;
+        total_wt += p[i].wt;
+
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n",
+               p[i].pid, p[i].at, p[i].bt,
+               p[i].ct, p[i].tat, p[i].wt);
+    }
+
+    printf("Average TAT = %.2f\n", total_tat / n);
+    printf("Average WT  = %.2f\n", total_wt / n);
+
+    // Gantt Chart
+    printf("Gantt Chart:\n|");
+    for (int i = 0; i < n; i++) {
+        printf(" P%d |", p[i].pid);
+    }
+    printf("\n");
+}
+
+/* ================= SJF (Non-Preemptive) ================= */
+void sjf(struct Process p[], int n) {
+    struct Process temp;
+    int time = 0;
+    float total_tat = 0, total_wt = 0;
+
+    // Sort by Burst Time
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (p[i].bt > p[j].bt) {
+                temp = p[i];
+                p[i] = p[j];
+                p[j] = temp;
+            }
+        }
+    }
+
+    printf("\n--- SJF Scheduling ---\n");
+    printf("P\tAT\tBT\tCT\tTAT\tWT\n");
+
+    for (int i = 0; i < n; i++) {
+        if (time < p[i].at)
+            time = p[i].at;
+
+        time += p[i].bt;
+        p[i].ct = time;
+        p[i].tat = p[i].ct - p[i].at;
+        p[i].wt = p[i].tat - p[i].bt;
+
+        total_tat += p[i].tat;
+        total_wt += p[i].wt;
+
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n",
+               p[i].pid, p[i].at, p[i].bt,
+               p[i].ct, p[i].tat, p[i].wt);
+    }
+
+    printf("Average TAT = %.2f\n", total_tat / n);
+    printf("Average WT  = %.2f\n", total_wt / n);
+
+    // Gantt Chart
+    printf("Gantt Chart:\n|");
+    for (int i = 0; i < n; i++) {
+        printf(" P%d |", p[i].pid);
+    }
+    printf("\n");
+}
+
+/* ================= Round Robin ================= */
+void round_robin(struct Process p[], int n, int q) {
+    int rem_bt[n];
+    int time = 0;
+    float total_tat = 0, total_wt = 0;
+    int done;
+
+    for (int i = 0; i < n; i++)
+        rem_bt[i] = p[i].bt;
+
+    printf("\n--- Round Robin (Quantum = %d) ---\n", q);
+    printf("Gantt Chart:\n|");
+
+    do {
+        done = 1;
+        for (int i = 0; i < n; i++) {
+            if (rem_bt[i] > 0) {
+                done = 0;
+                printf(" P%d |", p[i].pid);
+
+                if (rem_bt[i] > q) {
+                    time += q;
+                    rem_bt[i] -= q;
+                } else {
+                    time += rem_bt[i];
+                    p[i].ct = time;
+                    rem_bt[i] = 0;
+
+                    p[i].tat = p[i].ct - p[i].at;
+                    p[i].wt = p[i].tat - p[i].bt;
+
+                    total_tat += p[i].tat;
+                    total_wt += p[i].wt;
+                }
+            }
+        }
+    } while (!done);
+
+    printf("\n\nP\tAT\tBT\tCT\tTAT\tWT\n");
+    for (int i = 0; i < n; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n",
+               p[i].pid, p[i].at, p[i].bt,
+               p[i].ct, p[i].tat, p[i].wt);
+    }
+
+    printf("Average TAT = %.2f\n", total_tat / n);
+    printf("Average WT  = %.2f\n", total_wt / n);
+}
+
+/* ================= MAIN ================= */
+int main() {
+    int n, quantum;
+    struct Process p[10];
+
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    for (int i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+        printf("Enter AT and BT for P%d: ", i + 1);
+        scanf("%d %d", &p[i].at, &p[i].bt);
+    }
+
+    printf("Enter time quantum: ");
+    scanf("%d", &quantum);
+
+    fcfs(p, n);
+    sjf(p, n);
+    round_robin(p, n, quantum);
+
+    // ✅ SAFE PAUSE: Wait for Enter key before exiting
+    printf("\nPress Enter to exit...");
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF); // clear leftover input
+    getchar(); // wait for Enter
+
+    return 0;
+}
